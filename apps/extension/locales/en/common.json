@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "error": "Error",
+    "success": "Success",
+    "failed": "Failed",
+    "warning": "Warning",
+    "search": "Search",
+    "empty": "No data",
+    "noResults": "No results found",
+    "back": "Back",
+    "next": "Next",
+    "openSettings": "Open Full Settings",
+    "settings": "Settings",
+    "bookmarkList": "Bookmark List",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{days}} days ago",
+    "storage": "Storage",
+    "more": "More",
+    "loadMore": "Load More",
+    "manageBookmarks": "Manage Bookmarks",
+    "viewShortcuts": "View Shortcuts",
+    "languages": {
+      "en": "English",
+      "zh": "中文",
+      "ja": "日本語",
+      "ko": "한국어"
+    },
+    "theme": {
+      "toggle": "Toggle theme",
+      "light": "Light mode",
+      "dark": "Dark mode",
+      "system": "Follow system"
+    },
+    "contextMenu": {
+      "saveToHamHome": "Save to HamHome"
+    }
+  }
+}

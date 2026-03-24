@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭",
+    "confirm": "确认",
+    "error": "错误",
+    "success": "成功",
+    "failed": "失败",
+    "warning": "警告",
+    "search": "搜索",
+    "empty": "无数据",
+    "noResults": "未找到匹配结果",
+    "back": "返回",
+    "next": "下一步",
+    "openSettings": "打开完整设置",
+    "settings": "设置",
+    "bookmarkList": "书签列表",
+    "today": "今天",
+    "yesterday": "昨天",
+    "daysAgo": "{{days}} 天前",
+    "storage": "存储",
+    "more": "更多",
+    "loadMore": "加载更多",
+    "manageBookmarks": "管理书签",
+    "viewShortcuts": "查看快捷键",
+    "languages": {
+      "en": "English",
+      "zh": "中文",
+      "ja": "日本語",
+      "ko": "한국어"
+    },
+    "theme": {
+      "toggle": "切换主题",
+      "light": "浅色模式",
+      "dark": "深色模式",
+      "system": "跟随系统"
+    },
+    "contextMenu": {
+      "saveToHamHome": "收藏到 HamHome"
+    }
+  }
+}

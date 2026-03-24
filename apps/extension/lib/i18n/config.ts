@@ -1,0 +1,76 @@
+/**
+ * i18next 配置
+ * 适用于 HamHome 浏览器插件
+ */
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { i18nResources } from "./resources";
+
+// localStorage key
+const I18N_STORAGE_KEY = "i18nextLng";
+
+// 自定义语言检测器，优先从 localStorage 读取
+const customLanguageDetector = {
+  name: "customDetector",
+  lookup() {
+    // 优先从 localStorage 读取
+    const storedLng = localStorage.getItem(I18N_STORAGE_KEY);
+    if (storedLng && ["en", "zh"].includes(storedLng)) {
+      return storedLng;
+    }
+    return undefined;
+  },
+  cacheUserLanguage(lng: string) {
+    localStorage.setItem(I18N_STORAGE_KEY, lng);
+  },
+};
+
+// 创建自定义 LanguageDetector 实例
+const languageDetector = new LanguageDetector();
+languageDetector.addDetector(customLanguageDetector);
+
+i18n
+  .use(languageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: i18nResources,
+    fallbackLng: "en",
+    defaultNS: "common",
+    ns: ["common", "bookmark", "settings", "ai"],
+    debug: process.env.NODE_ENV === "development",
+    interpolation: {
+      escapeValue: false, // React 已处理 XSS 防护
+    },
+    detection: {
+      // 自定义检测器优先
+      order: ["customDetector", "localStorage", "navigator", "htmlTag"],
+      caches: ["localStorage"],
+      lookupLocalStorage: I18N_STORAGE_KEY,
+    },
+    // 缓存用户选择的语言
+    saveMissing: false,
+  });
+
+// 初始化时从 storage 同步语言设置（使用 WXT Storage）
+async function syncLanguageFromStorage() {
+  try {
+    // 动态导入避免循环依赖
+    const { configStorage } = await import("@/lib/storage");
+    const settings = await configStorage.getSettings();
+    if (settings?.language && ["en", "zh"].includes(settings.language)) {
+      const currentLng = i18n.language;
+      if (currentLng !== settings.language) {
+        await i18n.changeLanguage(settings.language);
+        localStorage.setItem(I18N_STORAGE_KEY, settings.language);
+      }
+    }
+  } catch (error) {
+    console.warn("[i18n] Failed to sync language from storage:", error);
+  }
+}
+
+// 执行同步
+syncLanguageFromStorage();
+
+export default i18n;

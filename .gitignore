@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.output/
+.next/
+.wxt/
+out/
+
+# Turbo
+.turbo/
+
+# IDE / local tooling (do not publish)
+.idea/
+.vscode/
+.agent/
+.cursor/
+
+# Cloudflare Wrangler local cache
+.wrangler/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.submit
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+
+# Misc
+*.tgz
+.cache/
+tsconfig.tsbuildinfo
+
+docs/blog/

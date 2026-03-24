@@ -1,0 +1,38 @@
+{
+  "name": "ham-home",
+  "version": "1.0.1",
+  "private": true,
+  "description": "HamHome - 智能书签管理工具",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "clean": "turbo clean && rm -rf node_modules",
+    "dev:web": "pnpm --filter web dev",
+    "dev:extension": "pnpm --filter hamhome dev",
+    "dev:ext-edge": "pnpm --filter hamhome dev:edge",
+    "dev:ext-firefox": "pnpm --filter hamhome dev:firefox",
+    "build:web": "pnpm --filter web build",
+    "build:extension": "pnpm --filter hamhome build:all",
+    "zip:extension": "pnpm --filter hamhome zip:all",
+    "submit:extension": "pnpm --filter hamhome submit:all",
+    "submit:init": "pnpm --filter hamhome submit:init"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.5.6",
+    "shadcn": "^3.6.3",
+    "tailwindcss": "^4.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "p-limit": "^7.3.0",
+    "zod": "^4.3.6"
+  }
+}
