@@ -193,7 +193,7 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
     }
 
     const generatedAt = new Date().toISOString();
-    const summaryHtml = renderDigestEmailHtml(llmResult, { runId, generatedAt });
+    const summaryHtml = renderDigestEmailHtml(llmResult, { runId, generatedAt, title: emailSubjectPrefix });
 
     const note = sourceErrors.length ? sourceErrors.join('; ') : null;
     const deliveryNotes: string[] = [];

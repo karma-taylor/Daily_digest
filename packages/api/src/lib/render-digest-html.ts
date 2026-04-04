@@ -2,7 +2,7 @@ import type { LlmDigestResult } from './llm';
 
 export function renderDigestEmailHtml(
   result: LlmDigestResult,
-  meta: { runId: string; generatedAt: string },
+  meta: { runId: string; generatedAt: string; title?: string },
 ): string {
   const sectionsHtml = result.sections
     .map(
@@ -39,7 +39,7 @@ export function renderDigestEmailHtml(
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
 <body style="background:#f8fafc;padding:24px;margin:0;">
 <div style="max-width:640px;margin:0 auto;background:#fff;padding:24px;border-radius:12px;border:1px solid #e2e8f0;">
-  <h1 style="font-family:system-ui;font-size:20px;color:#0f172a;margin:0 0 8px;">HamHome 资讯日报</h1>
+  <h1 style="font-family:system-ui;font-size:20px;color:#0f172a;margin:0 0 8px;">${escapeHtml(meta.title ?? 'HamHome 资讯日报')}</h1>
   <p style="margin:0 0 20px;color:#64748b;font-size:13px;">生成时间 ${escapeHtml(meta.generatedAt)} · Run ${escapeHtml(meta.runId)}</p>
   ${sectionsHtml}
   ${chartHtml}

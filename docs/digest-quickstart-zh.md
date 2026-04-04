@@ -77,7 +77,8 @@ curl.exe -s -H "X-User-Id: dev-user-1" http://127.0.0.1:8787/v1/digest/runs
 1. 对 D1 执行迁移：`packages/db/migrations/d1/0002_digest_topics_json.sql`（在已有 `0001` 之后）。
 2. 用 `PUT /v1/digest/settings` 写入 `topics`（或执行 `seed_example.sql` 末尾的 `UPDATE`，会写入示例双主题）。
 3. 启用后流水线会**按关键词把条目分入各主题**，每桶最多 `maxItems`（默认 15）；**未配置 `LLM_API_KEY` 时**邮件里是该主题的**标题+链接列表**，配置 LLM 后为**中文要点**。
-4. 若某一主题经常为空，请**增加国际/时政/科技类 RSS**，或在 `topics` 里补充关键词。
+4. 若某一主题经常为空，请**增加国际/时政/科技类 RSS**（与另一主题共用同一批 `digest_sources`，靠关键词分桶），或在 `topics` 里补充关键词。仓库已含示例：`seed_example.sql` 在 HN 之外还插入了 BBC World、Guardian World、Al Jazeera、DW、France 24、NPR World、UN News 及 TechCrunch / Ars / Verge。**已有云端库不覆盖 settings** 时，可单独执行：
+   `pnpm.cmd exec wrangler d1 execute hamhome-db --remote --file=..\..\packages\db\migrations\d1\seed_extra_rss_world.sql`（在 `packages\api` 下，路径按你本机调整）。
 
 示例（节选，完整可自行扩展关键词）：
 
