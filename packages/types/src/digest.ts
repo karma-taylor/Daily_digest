@@ -17,11 +17,18 @@ export interface DigestSourceDTO {
   updatedAt: Date;
 }
 
+export interface DigestTopicConfigDTO {
+  label: string;
+  keywords: string[];
+  maxItems?: number;
+}
+
 export interface DigestUserSettingsDTO {
   userId: string;
   timezone: string;
   deliveryEmail: string | null;
   keywords: string[];
+  topics?: DigestTopicConfigDTO[];
   deliverHourLocal: number;
   quietOnHolidays: boolean;
   mqttTopicSuffix: string | null;
