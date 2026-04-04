@@ -5,16 +5,43 @@ import type { Env } from '../types/env';
 import { fetchAndParseFeed } from './rss';
 import { fetchPagePlain } from './url-fetch';
 import { dedupeByUrlAndTitle } from './dedup';
-import { generateDigestWithLlm, fallbackDigestFromTitles } from './llm';
+import {
+  generateDigestWithLlm,
+  generateTopicDigestWithLlm,
+  fallbackDigestFromTitles,
+  fallbackDigestFromTopicBuckets,
+} from './llm';
 import type { LlmDigestResult } from './llm';
 import { renderDigestEmailHtml } from './render-digest-html';
 import { sendHtmlEmail } from './email';
 import { publishDigestMqtt } from './mqtt';
+import type { TopicBucketConfig } from './topic-buckets';
+import { partitionItemsIntoTopicBuckets } from './topic-buckets';
 
 type Agg = { title: string; url: string; summary: string };
 
+function parseTopicsFromSettings(rawJson: string | null | undefined): TopicBucketConfig[] {
+  if (!rawJson?.trim()) return [];
+  try {
+    const raw = JSON.parse(rawJson) as unknown;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter(Boolean)
+      .map((t) => {
+        const o = t as Record<string, unknown>;
+        const label = String(o.label ?? '').trim();
+        const keywords = Array.isArray(o.keywords) ? o.keywords.map((x) => String(x)) : [];
+        const maxItems = typeof o.maxItems === 'number' ? o.maxItems : undefined;
+        return { label, keywords, maxItems };
+      })
+      .filter((t) => t.label.length > 0 && t.keywords.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 /**
- * 完整流水线：多源拉取 → 去重/关键词过滤 → LLM 摘要与分类 → HTML → 邮件 / MQTT
+ * 完整流水线：多源拉取 → 去重/关键词或多主题分桶 → LLM 摘要 → HTML → 邮件 / MQTT
  */
 export async function runDigestPipeline(env: Env, runId: string, userId: string): Promise<void> {
   const d1 = env.DB;
@@ -52,14 +79,19 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
       }
     }
 
+    const topicConfigs = parseTopicsFromSettings(settings?.topicsJson);
+    const useTopics = topicConfigs.length > 0;
+
     const agg: Agg[] = [];
     const sourceErrors: string[] = [];
+
+    const rssCap = useTopics ? 70 : 25;
 
     for (const src of sources) {
       try {
         if (src.kind === 'rss') {
           const items = await fetchAndParseFeed(src.url);
-          for (const it of items.slice(0, 25)) {
+          for (const it of items.slice(0, rssCap)) {
             agg.push({ title: it.title, url: it.url, summary: it.summary || '' });
           }
         } else {
@@ -72,7 +104,7 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
     }
 
     let deduped = dedupeByUrlAndTitle(agg);
-    if (keywords.length > 0) {
+    if (!useTopics && keywords.length > 0) {
       const kw = keywords.map((k) => k.toLowerCase());
       deduped = deduped.filter((it) => {
         const blob = `${it.title} ${it.summary}`.toLowerCase();
@@ -80,33 +112,83 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
       });
     }
 
-    const limited = deduped.slice(0, 45);
-
     let llmResult: LlmDigestResult;
-    if (limited.length === 0) {
-      llmResult = {
-        sections: [
-          {
-            category: '其他',
-            one_line: '本次未合并到有效条目',
-            bullets: sourceErrors.length
-              ? [`部分源抓取失败：${sourceErrors.join(' | ')}`]
-              : ['请添加启用的 RSS 或 URL 数据源，或放宽关键词'],
-          },
-        ],
-        chart: null,
-      };
-    } else {
-      const blob = limited
-        .map((it, i) => `[${i + 1}] ${it.title}\nURL: ${it.url}\n摘录: ${it.summary.slice(0, 1500)}\n`)
-        .join('\n');
+    let emailSubjectPrefix = 'HamHome 资讯日报';
 
-      try {
-        const out = await generateDigestWithLlm(env, blob);
-        llmResult = out ?? fallbackDigestFromTitles(limited);
-      } catch (e) {
-        console.warn('[pipeline] LLM error, fallback', e);
-        llmResult = fallbackDigestFromTitles(limited);
+    if (useTopics) {
+      emailSubjectPrefix = 'HamHome 双主题日报';
+      const buckets = partitionItemsIntoTopicBuckets(deduped, topicConfigs);
+      const totalMatched = buckets.reduce((n, b) => n + b.items.length, 0);
+
+      if (deduped.length === 0) {
+        llmResult = {
+          sections: [
+            {
+              category: '其他',
+              one_line: '本次未合并到有效条目',
+              bullets: sourceErrors.length
+                ? [`部分源抓取失败：${sourceErrors.join(' | ')}`]
+                : ['请添加启用的 RSS 或 URL 数据源'],
+            },
+          ],
+          chart: null,
+        };
+      } else if (totalMatched === 0) {
+        llmResult = {
+          sections: buckets.map((b) => ({
+            category: b.category,
+            one_line: '今日抓取结果中未匹配到该主题（建议增加国际/科技类 RSS 或调整 topics 关键词）',
+            bullets: [],
+          })),
+          chart: null,
+        };
+      } else {
+        const topicBlocks = buckets.map((b) => ({
+          category: b.category,
+          blob: b.items
+            .map((it, i) => `[${i + 1}] ${it.title}\nURL: ${it.url}\n摘录: ${it.summary.slice(0, 1200)}\n`)
+            .join('\n'),
+        }));
+        const slim = buckets.map((b) => ({
+          category: b.category,
+          items: b.items.map((x) => ({ title: x.title, url: x.url })),
+        }));
+        try {
+          const out = await generateTopicDigestWithLlm(env, topicBlocks);
+          llmResult = out ?? fallbackDigestFromTopicBuckets(slim);
+        } catch (e) {
+          console.warn('[pipeline] topic LLM error, fallback', e);
+          llmResult = fallbackDigestFromTopicBuckets(slim);
+        }
+      }
+    } else {
+      const limited = deduped.slice(0, 45);
+
+      if (limited.length === 0) {
+        llmResult = {
+          sections: [
+            {
+              category: '其他',
+              one_line: '本次未合并到有效条目',
+              bullets: sourceErrors.length
+                ? [`部分源抓取失败：${sourceErrors.join(' | ')}`]
+                : ['请添加启用的 RSS 或 URL 数据源，或放宽关键词'],
+            },
+          ],
+          chart: null,
+        };
+      } else {
+        const blob = limited
+          .map((it, i) => `[${i + 1}] ${it.title}\nURL: ${it.url}\n摘录: ${it.summary.slice(0, 1500)}\n`)
+          .join('\n');
+
+        try {
+          const out = await generateDigestWithLlm(env, blob);
+          llmResult = out ?? fallbackDigestFromTitles(limited);
+        } catch (e) {
+          console.warn('[pipeline] LLM error, fallback', e);
+          llmResult = fallbackDigestFromTitles(limited);
+        }
       }
     }
 
@@ -118,7 +200,7 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
 
     const email = settings?.deliveryEmail?.trim();
     if (email) {
-      const subj = `HamHome 资讯日报 · ${generatedAt.slice(0, 10)}`;
+      const subj = `${emailSubjectPrefix} · ${generatedAt.slice(0, 10)}`;
       const mail = await sendHtmlEmail(env, email, subj, summaryHtml);
       if (!mail.ok) {
         console.warn('[pipeline] email', mail.error);

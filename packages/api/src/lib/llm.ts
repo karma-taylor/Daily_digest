@@ -15,6 +15,116 @@ function extractJson(text: string): string {
   return t;
 }
 
+
+const MAX_TOPIC_BULLETS = 15;
+
+function parseLlmSections(parsed: unknown, maxBullets: number): LlmDigestResult['sections'] {
+  const p = parsed as Record<string, unknown>;
+  const sectionsRaw = Array.isArray(p.sections) ? p.sections : [];
+  return sectionsRaw.map((s) => {
+    const r = s as Record<string, unknown>;
+    const bullets = Array.isArray(r.bullets) ? r.bullets.map((x) => String(x)) : [];
+    return {
+      category: String(r.category ?? "其他"),
+      one_line: String(r.one_line ?? ""),
+      bullets: bullets.slice(0, maxBullets),
+    };
+  });
+}
+
+export async function generateTopicDigestWithLlm(env: Env, topicBlocks: { category: string; blob: string }[]): Promise<LlmDigestResult | null> {
+  const base = env.LLM_API_BASE?.replace(/\/$/, "") ?? "https://api.openai.com/v1";
+  const key = env.LLM_API_KEY;
+  const model = env.LLM_MODEL ?? "gpt-4o-mini";
+  if (!key) return null;
+
+  const names = topicBlocks.map((t) => t.category).join("、");
+  const n = topicBlocks.length;
+  const system =
+    "你是专业新闻编辑。用户会按主题提供多段摘录。你必须且仅输出一个 JSON 对象：\n" +
+    "{\n" +
+    "  \"sections\": [\n" +
+    "    { \"category\": \"<必须与输入主题名称完全一致>\", \"one_line\": \"该主题一句话综述\", \"bullets\": [\"要点1\",\"要点2\"] }\n" +
+    "  ],\n" +
+    "  \"chart\": null\n" +
+    "}\n" +
+    "硬性要求：\n" +
+    "- sections 必须恰好 " +
+    n +
+    " 条，顺序与主题一致：" +
+    names +
+    "\n" +
+    "- 每个 section 的 bullets 0–" +
+    MAX_TOPIC_BULLETS +
+    " 条\n" +
+    "- 每条 bullet 用中文 1–2 句客观摘要，不编造事实\n" +
+    "- 不要 markdown，不要代码块包裹 JSON";
+
+  const user = topicBlocks
+    .map((t, i) => "## 主题 " + (i + 1) + "：" + t.category + "\n" + t.blob)
+    .join("\n\n---\n\n");
+
+  const res = await fetch(base + "/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + key,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_tokens: 6144,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user.slice(0, 56000) },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("LLM " + res.status + ": " + err.slice(0, 500));
+  }
+  const data = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("LLM empty content");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(extractJson(content));
+  } catch {
+    return {
+      sections: [{ category: "其他", one_line: "模型未返回有效 JSON", bullets: [content.slice(0, 400)] }],
+      chart: null,
+    };
+  }
+
+  const sections = parseLlmSections(parsed, MAX_TOPIC_BULLETS);
+  if (sections.length === 0) {
+    return {
+      sections: [{ category: "其他", one_line: "暂无结构化摘要", bullets: [] }],
+      chart: null,
+    };
+  }
+  return { sections, chart: null };
+}
+
+export function fallbackDigestFromTopicBuckets(buckets: { category: string; items: { title: string; url: string }[] }[]) {
+  return {
+    sections: buckets.map((b) => ({
+      category: b.category,
+      one_line:
+        b.items.length === 0
+          ? "本主题今日无匹配条目（可调整关键词或增加 RSS）"
+          : "共 " + b.items.length + " 条（LLM 未配置或失败时列表）",
+      bullets: b.items.slice(0, MAX_TOPIC_BULLETS).map((i) => i.title + " — " + i.url),
+    })),
+    chart: null,
+  };
+}
+
 /**
  * OpenAI 兼容 Chat Completions（DeepSeek / 通义网关 / OpenAI 等）。
  */
@@ -71,16 +181,7 @@ export async function generateDigestWithLlm(env: Env, userBlob: string): Promise
   }
 
   const p = parsed as Record<string, unknown>;
-  const sectionsRaw = Array.isArray(p.sections) ? p.sections : [];
-  const sections = sectionsRaw.map((s) => {
-    const r = s as Record<string, unknown>;
-    const bullets = Array.isArray(r.bullets) ? r.bullets.map((x) => String(x)) : [];
-    return {
-      category: String(r.category ?? '其他'),
-      one_line: String(r.one_line ?? ''),
-      bullets: bullets.slice(0, 5),
-    };
-  });
+    const sections = parseLlmSections(parsed, 5);
 
   let chart: LlmDigestResult['chart'] = null;
   if (p.chart && typeof p.chart === 'object' && p.chart !== null) {

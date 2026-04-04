@@ -106,6 +106,15 @@ const settingsSchema = z.object({
   deliverHourLocal: z.number().min(0).max(23).optional(),
   quietOnHolidays: z.boolean().optional(),
   mqttTopicSuffix: z.string().optional().nullable(),
+  topics: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        keywords: z.array(z.string()).min(1),
+        maxItems: z.number().min(1).max(40).optional(),
+      }),
+    )
+    .optional(),
 });
 
 digest.get('/settings', async (c) => {
@@ -132,6 +141,27 @@ digest.get('/settings', async (c) => {
       keywords = [];
     }
   }
+  let topics: { label: string; keywords: string[]; maxItems?: number }[] = [];
+  if (row.topicsJson) {
+    try {
+      const t = JSON.parse(row.topicsJson) as unknown;
+      if (Array.isArray(t)) {
+        topics = t
+          .filter(Boolean)
+          .map((x) => {
+            const o = x as Record<string, unknown>;
+            return {
+              label: String(o.label ?? ""),
+              keywords: Array.isArray(o.keywords) ? o.keywords.map((k) => String(k)) : [],
+              maxItems: typeof o.maxItems === "number" ? o.maxItems : undefined,
+            };
+          })
+          .filter((x) => x.label.length > 0 && x.keywords.length > 0);
+      }
+    } catch {
+      topics = [];
+    }
+  }
   return c.json({
     success: true,
     data: {
@@ -139,6 +169,7 @@ digest.get('/settings', async (c) => {
       timezone: row.timezone,
       deliveryEmail: row.deliveryEmail,
       keywords,
+      topics,
       deliverHourLocal: row.deliverHourLocal ?? 8,
       quietOnHolidays: row.quietOnHolidays ?? false,
       mqttTopicSuffix: row.mqttTopicSuffix,
@@ -159,6 +190,7 @@ digest.put('/settings', zValidator('json', settingsSchema), async (c) => {
   const body = c.req.valid('json');
   const now = new Date();
   const keywordsJson = body.keywords !== undefined ? JSON.stringify(body.keywords) : undefined;
+  const topicsJson = body.topics !== undefined ? JSON.stringify(body.topics) : undefined;
 
   const existing = await db.select().from(schema.digestUserSettings).where(eq(schema.digestUserSettings.userId, userId));
   if (existing.length === 0) {
@@ -167,6 +199,7 @@ digest.put('/settings', zValidator('json', settingsSchema), async (c) => {
       timezone: body.timezone ?? 'Asia/Shanghai',
       deliveryEmail: body.deliveryEmail ?? null,
       keywordsJson: keywordsJson ?? null,
+      topicsJson: topicsJson ?? null,
       deliverHourLocal: body.deliverHourLocal ?? 8,
       quietOnHolidays: body.quietOnHolidays ?? false,
       mqttTopicSuffix: body.mqttTopicSuffix ?? null,
@@ -178,6 +211,7 @@ digest.put('/settings', zValidator('json', settingsSchema), async (c) => {
         ...(body.timezone !== undefined ? { timezone: body.timezone } : {}),
         ...(body.deliveryEmail !== undefined ? { deliveryEmail: body.deliveryEmail } : {}),
         ...(keywordsJson !== undefined ? { keywordsJson } : {}),
+        ...(topicsJson !== undefined ? { topicsJson } : {}),
         ...(body.deliverHourLocal !== undefined ? { deliverHourLocal: body.deliverHourLocal } : {}),
         ...(body.quietOnHolidays !== undefined ? { quietOnHolidays: body.quietOnHolidays } : {}),
         ...(body.mqttTopicSuffix !== undefined ? { mqttTopicSuffix: body.mqttTopicSuffix } : {}),
@@ -195,6 +229,27 @@ digest.put('/settings', zValidator('json', settingsSchema), async (c) => {
       keywords = [];
     }
   }
+  let topics: { label: string; keywords: string[]; maxItems?: number }[] = [];
+  if (row?.topicsJson) {
+    try {
+      const t = JSON.parse(row.topicsJson) as unknown;
+      if (Array.isArray(t)) {
+        topics = t
+          .filter(Boolean)
+          .map((x) => {
+            const o = x as Record<string, unknown>;
+            return {
+              label: String(o.label ?? ""),
+              keywords: Array.isArray(o.keywords) ? o.keywords.map((k) => String(k)) : [],
+              maxItems: typeof o.maxItems === "number" ? o.maxItems : undefined,
+            };
+          })
+          .filter((x) => x.label.length > 0 && x.keywords.length > 0);
+      }
+    } catch {
+      topics = [];
+    }
+  }
   return c.json({
     success: true,
     data: row
@@ -203,6 +258,7 @@ digest.put('/settings', zValidator('json', settingsSchema), async (c) => {
           timezone: row.timezone,
           deliveryEmail: row.deliveryEmail,
           keywords,
+          topics,
           deliverHourLocal: row.deliverHourLocal ?? 8,
           quietOnHolidays: row.quietOnHolidays ?? false,
           mqttTopicSuffix: row.mqttTopicSuffix,

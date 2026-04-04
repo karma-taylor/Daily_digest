@@ -44,3 +44,6 @@ VALUES (
   (strftime('%s', 'now') * 1000),
   (strftime('%s', 'now') * 1000)
 );
+
+-- 双主题日报（需先对 D1 执行 0002_digest_topics_json.sql）
+UPDATE digest_user_settings SET topics_json = '[{"label":"每日伊朗局势","maxItems":15,"keywords":["iran","iranian","tehran","middle east","israel","gaza","nuclear","sanction","伊朗","德黑兰","中东","核","制裁"]},{"label":"每日 AI 发展","maxItems":15,"keywords":["ai","llm","gpt","openai","claude","gemini","deepseek","machine learning","人工智能","大模型","深度学习"]}]' WHERE user_id = 'dev-user-1';

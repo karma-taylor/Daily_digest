@@ -155,6 +155,8 @@ export const digestUserSettings = sqliteTable('digest_user_settings', {
   deliveryEmail: text('delivery_email'),
   /** JSON 数组：关注关键词 */
   keywordsJson: text('keywords_json'),
+  /** topics_json: [{ label, keywords[], maxItems? }] */
+  topicsJson: text('topics_json'),
   /** 本地小时 0-23，在该小时前完成处理 */
   deliverHourLocal: integer('deliver_hour_local').default(8),
   quietOnHolidays: integer('quiet_on_holidays', { mode: 'boolean' }).default(false),

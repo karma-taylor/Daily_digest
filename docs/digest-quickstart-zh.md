@@ -72,6 +72,32 @@ curl.exe -s -H "X-User-Id: dev-user-1" http://127.0.0.1:8787/v1/digest/runs
 - 发信：配置 **`RESEND_API_KEY`**、**`RESEND_FROM`**。
 
 不配 LLM 时仍会生成 **标题回退** 类摘要。
+## 6b. 双主题日报（例如：伊朗局势 + AI，各约 15 条）
+
+1. 对 D1 执行迁移：`packages/db/migrations/d1/0002_digest_topics_json.sql`（在已有 `0001` 之后）。
+2. 用 `PUT /v1/digest/settings` 写入 `topics`（或执行 `seed_example.sql` 末尾的 `UPDATE`，会写入示例双主题）。
+3. 启用后流水线会**按关键词把条目分入各主题**，每桶最多 `maxItems`（默认 15）；**未配置 `LLM_API_KEY` 时**邮件里是该主题的**标题+链接列表**，配置 LLM 后为**中文要点**。
+4. 若某一主题经常为空，请**增加国际/时政/科技类 RSS**，或在 `topics` 里补充关键词。
+
+示例（节选，完整可自行扩展关键词）：
+
+```json
+{
+  "topics": [
+    {
+      "label": "每日伊朗局势",
+      "maxItems": 15,
+      "keywords": ["iran", "tehran", "伊朗", "德黑兰", "middle east", "nuclear"]
+    },
+    {
+      "label": "每日 AI 发展",
+      "maxItems": 15,
+      "keywords": ["ai", "llm", "gpt", "openai", "人工智能", "大模型"]
+    }
+  ]
+}
+```
+
 
 ## 7. 再打开队列（与线上一致）
 
