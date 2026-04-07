@@ -2,6 +2,23 @@
 
 本仓库为 HamHome / 资讯日报（Digest）相关代码。条目按时间倒序（最新在上）。
 
+## 2026-04-07
+
+### Added
+
+- **Subscription schema and migrations**: added `digest_subscriptions` with migration files `0003_digest_subscriptions.sql` and `0004_digest_subscription_limits.sql`, including `max_items_per_email` and `max_items_per_topic`.
+- **Admin subscription API**: added list/create/update/delete/test endpoints with bearer auth via `DIGEST_ADMIN_TOKEN` and owner binding via `DIGEST_ADMIN_OWNER_USER_ID`.
+- **Minute-window scheduler utility**: added `schedule.ts` for timezone-based `HH:mm` trigger checks.
+- **One-click release script**: added `packages/api/scripts/release.mjs` to run D1 migrations, Worker deploy, and `/health` checks.
+
+### Changed
+
+- **Cron frequency**: changed `wrangler.toml` cron to `*/10 * * * *` to support minute-level delivery timing.
+- **Pipeline limits**: enforced per-topic and per-email item caps during digest generation.
+- **Digest admin UI**: redesigned to a two-column layout; topics/keywords now use single CSV inputs; added compact `hourly` switch and delivery-time label switch to `start time` when hourly mode is enabled; bottom actions changed to `Test` and `Create`.
+- **Admin header behavior**: admin operations no longer rely on `X-User-Id` from frontend requests.
+- **Release resilience**: release flow now continues deploy and health-check when migration `0004` is already applied.
+
 ## 2026-04-04
 
 ### 新增
