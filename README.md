@@ -1,197 +1,86 @@
-<p>
-  <img src="logo.png" alt="HamHome" width="280" />
-</p>
+﻿# Daily Digest
 
-# HamHome
+AI-assisted daily digest system with admin subscription management, scheduled delivery, and one-click release for Cloudflare Workers.
 
-**AI-Powered Bookmark Manager for Modern Browsers**
+## What this repo is
 
-<p>
-  <img src="https://img.shields.io/github/v/release/bingoYB/ham_home?style=flat-square" alt="Release" />
-  <img src="https://img.shields.io/github/stars/bingoYB/ham_home?style=flat-square" alt="Stars" />
-  <img src="https://img.shields.io/github/forks/bingoYB/ham_home?style=flat-square" alt="Forks" />
-  <img src="https://img.shields.io/github/issues/bingoYB/ham_home?style=flat-square" alt="Issues" />
-  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" />
-</p>
+This project contains:
 
-<p>
-  <a href="https://bingoyb.github.io/ham_home/">Product Introduction</a> •
-  <a href="./docs/USAGE_en.md">Usage</a> •
-  <a href="./docs/README_zh.md">中文文档</a> •
-  <a href="./docs/USAGE_zh.md">使用文档</a> •
-  <a href="#features">Features</a> •
-  <a href="#development">Development</a> •
-  <a href="#contributing">Contributing</a>
-</p>
+- Digest API on Cloudflare Workers (`packages/api`)
+- D1 schema/migrations (`packages/db`)
+- Web admin console for digest subscriptions (`apps/web`)
+- Shared types (`packages/types`)
 
-## What is HamHome?
+## Key features
 
-HamHome is an AI-powered bookmark manager for modern browsers. It uses AI to automatically categorize saved pages, generate summaries, and suggest tags. It also supports semantic search for your bookmarks while keeping your data local and private.
+- Admin subscription CRUD + test send
+- Timezone-based local delivery time (`HH:mm`)
+- Minute-window scheduler with 10-minute cron trigger
+- Per-topic and per-email item limits in pipeline
+- One-click release: migrate + deploy + health check
 
-👉 **[View Product Introduction](https://bingoyb.github.io/ham_home/)** - Learn more about features and capabilities
+## Quick start
 
-## Screenshots
-
-|                         **Side Panel**                         |                          **Save Panel**                          |
-| :------------------------------------------------------------: | :--------------------------------------------------------------: |
-|  ![Side Panel](docs/screenshot/compressed/en/side-panel.png)   |   ![Save Panel](docs/screenshot/compressed/en/save-panel.png)    |
-|                      **Semantic Search**                       |                      **Preset Categories**                       |
-|      ![Semantic Search](https://i.imgur.com/8HHRTb9.png)       |      ![Preset Categories](https://i.imgur.com/0Qku5cx.png)       |
-|                      **Management Page**                       |                        **Settings Page**                         |
-| ![Management Page](docs/screenshot/compressed/en/mng-page.png) | ![Settings Page](docs/screenshot/compressed/en/setting-page.png) |
-
-## Features
-
-### 🤖 AI-Assisted Organization
-
-- Auto-categorization based on page content
-- Smart tag suggestions with configurable presets
-- AI-generated summaries for quick reference
-- BYOK (Bring Your Own Key) support for OpenAI, Anthropic, Claude, Ollama, and custom endpoints
-
-### 🔄 Multi-Device Sync (WebDAV)
-
-- Support synchronization via WebDAV (e.g., Nextcloud, InfiniCLOUD, etc.)
-- End-to-end encrypted or plain data sync options
-- Real-time sync status widget in the header
-- Granular control over remote data (clear remote data anytime)
-
-### 🗂️ Category Management
-
-- **Icon Support**: Add emoji icons to your categories for better visual identification.
-- **Preset Schemes**: Two built-in category templates—"General" and "Professional Creator"—with one-click import
-- **AI-Generated Categories**: Describe your use case and let AI create a tailored category structure
-- Unlimited hierarchical category tree
-
-### 📸 Page Snapshots
-
-- Save complete HTML snapshots locally (IndexedDB)
-- Access content even when the original page goes offline
-- Powered by [Mozilla Readability](https://github.com/mozilla/readability) for clean extraction
-
-### 🔍 Powerful Search & Filtering
-
-- Full-text search across titles, descriptions, and content
-- Semantic search (vector-based)
-- Filter by category, tags, and time range
-- Create custom filter presets for complex queries
-
-### 🎯 Privacy-First Design & Storage
-
-- **Local-First**: All data stored locally in Chrome Storage + IndexedDB
-- **Granular Storage Management**: View and manage space used by bookmarks, snapshots, and vector data separately.
-- **Selective Deletion**: Delete specific data types (e.g., only snapshots) while keeping your categories and configurations.
-- **Privacy Domains**: Configure domains to exclude sensitive sites from AI analysis
-
-### 🖥️ Modern UI
-
-- Grid (masonry) and list view modes
-- Light/dark theme with system preference detection
-- Full i18n support (English & Chinese)
-- Keyboard shortcuts and edge-trigger panel
-
-## Browser Support
-
-| Browser           | Status           |
-| ----------------- | ---------------- |
-| Chrome / Chromium | ✅ Manifest V3    |
-| Microsoft Edge    | ✅ Manifest V3    |
-| Firefox           | ✅ Manifest V2/V3 |
-
-## Downloads
-
-- [**Chrome Web Store**](): Pending upload
-- [**Firefox Add-ons**](https://addons.mozilla.org/zh-CN/firefox/addon/hamhome-%E6%99%BA%E8%83%BD%E4%B9%A6%E7%AD%BE%E5%8A%A9%E6%89%8B/)
-- [**Microsoft Edge Addons**](https://microsoftedge.microsoft.com/addons/detail/hamhome-smart-bookmark-/nmbdgbicgagmokdmohgngcbhkaicfnpi)
-- See [releases](https://github.com/bingoYB/ham_home/releases) to download and install manually.
-
-## Installation
-
-### From Source
+### Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/bingoYB/ham_home.git
-cd ham_home
-
-# Install dependencies (requires pnpm)
 pnpm install
-
-# Build for Chrome/Edge
-pnpm --filter extension build
-
-# Build for Firefox
-pnpm --filter extension build:firefox
 ```
 
-### Load the Extension
-
-- **Chrome/Edge**: Navigate to `chrome://extensions/`, enable "Developer mode", click "Load unpacked", and select `apps/extension/.output/chrome-mv3`
-- **Firefox**: Go to `about:debugging`, click "This Firefox", click "Load Temporary Add-on", and select `apps/extension/.output/firefox-mv2/manifest.json`
-
-## Development
+### Run web UI (local)
 
 ```bash
-# Start dev server (Chrome)
-pnpm --filter extension dev
-
-# Start dev server (Firefox)
-pnpm --filter extension dev:firefox
-
-# Build all browser variants
-pnpm --filter extension build:all
+pnpm run dev:web
 ```
 
-## Tech Stack
+Then open:
 
-<p>
-  <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen?style=flat-square&logo=node.js" alt="Node" />
-  <img src="https://img.shields.io/badge/pnpm-9.0.0-orange?style=flat-square&logo=pnpm" alt="pnpm" />
-  <img src="https://img.shields.io/badge/TypeScript-5.7-blue?style=flat-square&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react" alt="React" />
-</p>
+- `http://localhost:3000/digest`
 
-- **Framework**: [WXT](https://wxt.dev/) (Vite-based extension framework)
-- **UI**: React 19 + TypeScript + Tailwind CSS
-- **Components**: [shadcn/ui](https://ui.shadcn.com/)
-- **Content Extraction**: Mozilla Readability + Turndown
-- **i18n**: i18next + react-i18next
-- **Storage**: Chrome Storage API + IndexedDB
+### API release (recommended)
 
-## Project Structure
-
-```
-ham_home/
-├── apps/
-│   └── extension/          # Browser extension
-│       ├── components/     # React components
-│       ├── hooks/          # Custom hooks
-│       ├── lib/            # Core libraries (AI, storage, i18n)
-│       ├── entrypoints/    # Extension entry points
-│       └── locales/        # i18n resources
-├── packages/
-│   ├── ui/                 # Shared UI components
-│   ├── types/              # Shared TypeScript types
-│   └── ...                 # Other shared packages
-└── docs/                   # Documentation
+```bash
+pnpm run api:release
 ```
 
-## Contributing
+This command runs:
 
-Contributions are welcome! Please:
+1. D1 migrations for digest subscriptions
+2. Worker deploy
+3. Health check on `/health`
 
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+## Environment variables
+
+### API runtime
+
+- `DIGEST_ADMIN_TOKEN`: bearer token for admin digest endpoints
+- `DIGEST_ADMIN_OWNER_USER_ID`: owner user id used by admin mode (default: `dev-user-1`)
+
+### Release script
+
+- `HAMHOME_API_URL`: base URL used by health check in release flow
+  - default: `https://hamhome-api.hamhome-680ce447.workers.dev`
+
+PowerShell example:
+
+```powershell
+$env:HAMHOME_API_URL="https://api.your-domain.com"; pnpm run api:release
+```
+
+## Main scripts
+
+From repo root:
+
+- `pnpm run dev:web`
+- `pnpm run api:migrate:subscriptions`
+- `pnpm run api:deploy`
+- `pnpm run api:release`
+
+## Notes
+
+- If migration `0004` reports duplicate column, it usually means that migration was already applied.
+- Final release success should be confirmed by `Health OK` output.
 
 ## License
 
-[MIT](./LICENSE)
-
----
-
-<p align="center">
-  If you find HamHome useful, consider giving it a ⭐
-</p>
+MIT
