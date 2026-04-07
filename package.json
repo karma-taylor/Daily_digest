@@ -16,7 +16,10 @@
     "build:extension": "pnpm --filter hamhome build:all",
     "zip:extension": "pnpm --filter hamhome zip:all",
     "submit:extension": "pnpm --filter hamhome submit:all",
-    "submit:init": "pnpm --filter hamhome submit:init"
+    "submit:init": "pnpm --filter hamhome submit:init",
+    "api:migrate:subscriptions": "pnpm --filter @hamhome/api run d1:migrate:subscriptions",
+    "api:deploy": "pnpm --filter @hamhome/api run deploy:prod",
+    "api:release": "pnpm --filter @hamhome/api run release"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",

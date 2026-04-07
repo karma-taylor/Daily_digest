@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Cloudflare Workers 环境变量类型定义
  */
 export interface Env {
@@ -15,12 +15,16 @@ export interface Env {
   LLM_API_KEY?: string;
   LLM_MODEL?: string;
 
-  /** Resend：secret put RESEND_API_KEY；RESEND_FROM 放在 wrangler [vars]（已验证域或测试发件人） */
+  /** Resend：secret put RESEND_API_KEY；RESEND_FROM 放在 wrangler [vars] */
   RESEND_API_KEY?: string;
   RESEND_FROM?: string;
+
+  /** 管理台鉴权：wrangler secret put DIGEST_ADMIN_TOKEN */
+  DIGEST_ADMIN_TOKEN?: string;
+  /** 管理员 owner（订阅的归属用户），默认 dev-user-1 */
+  DIGEST_ADMIN_OWNER_USER_ID?: string;
 
   /** MQTT：HTTPS 桥接地址（自建转发到 Broker） */
   MQTT_NOTIFY_URL?: string;
   MQTT_NOTIFY_SECRET?: string;
 }
-

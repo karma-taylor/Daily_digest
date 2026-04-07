@@ -27,7 +27,7 @@ VALUES (
   'jiaweide0@gmail.com',
   '[]',
   8,
-  1,
+  0,
   'demo-device',
   (strftime('%s', 'now') * 1000)
 );

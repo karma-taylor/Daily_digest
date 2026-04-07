@@ -9,7 +9,12 @@
     "build": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
     "register-subdomain": "node scripts/register-workers-dev-subdomain.mjs",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "d1:migrate:0003": "wrangler d1 execute hamhome-db --remote --file=../../packages/db/migrations/d1/0003_digest_subscriptions.sql",
+    "d1:migrate:0004": "wrangler d1 execute hamhome-db --remote --file=../../packages/db/migrations/d1/0004_digest_subscription_limits.sql",
+    "d1:migrate:subscriptions": "pnpm run d1:migrate:0003 && pnpm run d1:migrate:0004",
+    "deploy:prod": "wrangler deploy",
+    "release": "node ./scripts/release.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^4.5.0",
@@ -27,4 +32,3 @@
     "typescript": "^5.3.0"
   }
 }
-

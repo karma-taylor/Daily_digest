@@ -1,5 +1,5 @@
-/**
- * HamHome 数据库 Schema (Drizzle ORM + SQLite)
+﻿/**
+ * HamHome 鏁版嵁搴?Schema (Drizzle ORM + SQLite)
  */
 import { 
   sqliteTable, 
@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
-// ============ 用户表 ============
+// ============ 鐢ㄦ埛琛?============
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull(),
@@ -25,7 +25,7 @@ export const users = sqliteTable('users', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// ============ 书签表 ============
+// ============ 涔︾琛?============
 export const bookmarks = sqliteTable('bookmarks', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -50,7 +50,7 @@ export const bookmarks = sqliteTable('bookmarks', {
   userUrlUnique: uniqueIndex('bookmarks_user_url_unique').on(table.userId, table.url),
 }));
 
-// ============ 分类表 ============
+// ============ 鍒嗙被琛?============
 export const collections = sqliteTable('collections', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -62,7 +62,7 @@ export const collections = sqliteTable('collections', {
   userIdIdx: index('collections_user_id_idx').on(table.userId),
 }));
 
-// ============ 标签表 ============
+// ============ 鏍囩琛?============
 export const tags = sqliteTable('tags', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -73,7 +73,7 @@ export const tags = sqliteTable('tags', {
   userNameUnique: uniqueIndex('tags_user_name_unique').on(table.userId, table.name),
 }));
 
-// ============ 书签-标签关联表 ============
+// ============ 涔︾-鏍囩鍏宠仈琛?============
 export const bookmarksTags = sqliteTable('bookmarks_tags', {
   bookmarkId: text('bookmark_id').notNull().references(() => bookmarks.id, { onDelete: 'cascade' }),
   tagId: text('tag_id').notNull().references(() => tags.id, { onDelete: 'cascade' }),
@@ -133,7 +133,7 @@ export const bookmarksTagsRelations = relations(bookmarksTags, ({ one }) => ({
   }),
 }));
 
-// ============ 资讯日报：数据源（RSS / 指定 URL）============
+// ============ 璧勮鏃ユ姤锛氭暟鎹簮锛圧SS / 鎸囧畾 URL锛?===========
 export const digestSources = sqliteTable('digest_sources', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -148,24 +148,24 @@ export const digestSources = sqliteTable('digest_sources', {
   userIdIdx: index('digest_sources_user_id_idx').on(table.userId),
 }));
 
-// ============ 资讯日报：用户投递与个性化 ============
+// ============ 璧勮鏃ユ姤锛氱敤鎴锋姇閫掍笌涓€у寲 ============
 export const digestUserSettings = sqliteTable('digest_user_settings', {
   userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   timezone: text('timezone').notNull().default('Asia/Shanghai'),
   deliveryEmail: text('delivery_email'),
-  /** JSON 数组：关注关键词 */
+  /** JSON 鏁扮粍锛氬叧娉ㄥ叧閿瘝 */
   keywordsJson: text('keywords_json'),
   /** topics_json: [{ label, keywords[], maxItems? }] */
   topicsJson: text('topics_json'),
-  /** 本地小时 0-23，在该小时前完成处理 */
+  /** 鏈湴灏忔椂 0-23锛屽湪璇ュ皬鏃跺墠瀹屾垚澶勭悊 */
   deliverHourLocal: integer('deliver_hour_local').default(8),
   quietOnHolidays: integer('quiet_on_holidays', { mode: 'boolean' }).default(false),
-  /** 可选：MQTT 设备/主题标识，由外部 Broker 消费 */
+  /** 鍙€夛細MQTT 璁惧/涓婚鏍囪瘑锛岀敱澶栭儴 Broker 娑堣垂 */
   mqttTopicSuffix: text('mqtt_topic_suffix'),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// ============ 资讯日报：一次生成任务（抓取→摘要→投递）============
+// ============ 璧勮鏃ユ姤锛氫竴娆＄敓鎴愪换鍔★紙鎶撳彇鈫掓憳瑕佲啋鎶曢€掞級============
 export const digestRuns = sqliteTable('digest_runs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -198,6 +198,37 @@ export const digestUserSettingsRelations = relations(digestUserSettings, ({ one 
 export const digestRunsRelations = relations(digestRuns, ({ one }) => ({
   user: one(users, {
     fields: [digestRuns.userId],
+    references: [users.id],
+  }),
+}));
+
+
+
+// ============ 资讯日报：订阅（邮箱 + 时区 + 本地时间 + 主题）============
+export const digestSubscriptions = sqliteTable('digest_subscriptions', {
+  id: text('id').primaryKey(),
+  ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  timezone: text('timezone').notNull().default('Asia/Shanghai'),
+  /** HH:mm */
+  deliverTimeLocal: text('deliver_time_local').notNull(),
+  /** topics_json: [{ label, keywords[], maxItems? }] */
+  topicsJson: text('topics_json').notNull(),
+  enabled: integer('enabled', { mode: 'boolean' }).default(false),
+  /** 单封邮件总条数上限 */
+  maxItemsPerEmail: integer('max_items_per_email').default(20),
+  /** 单主题条数上限 */
+  maxItemsPerTopic: integer('max_items_per_topic').default(10),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+}, (table) => ({
+  ownerEnabledIdx: index('digest_subscriptions_owner_enabled_idx').on(table.ownerUserId, table.enabled),
+  enabledIdx: index('digest_subscriptions_enabled_idx').on(table.enabled),
+}));
+
+export const digestSubscriptionsRelations = relations(digestSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [digestSubscriptions.ownerUserId],
     references: [users.id],
   }),
 }));

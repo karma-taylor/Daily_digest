@@ -1,5 +1,5 @@
-/**
- * 资讯日报（云端扩展）— 与 packages/db 中 digest_* 表对应
+﻿/**
+ * 璧勮鏃ユ姤锛堜簯绔墿灞曪級鈥?涓?packages/db 涓?digest_* 琛ㄥ搴?
  */
 
 export type DigestSourceKind = 'rss' | 'url';
@@ -30,6 +30,7 @@ export interface DigestUserSettingsDTO {
   keywords: string[];
   topics?: DigestTopicConfigDTO[];
   deliverHourLocal: number;
+  /** 鍘嗗彶瀛楁锛沇orker 瀹氭椂浠诲姟宸蹭笉鍐嶅洜涓浗澶ч檰鑺傚亣鏃ュ仠鍙戙€?*/
   quietOnHolidays: boolean;
   mqttTopicSuffix: string | null;
   updatedAt: Date;
@@ -44,4 +45,16 @@ export interface DigestRunDTO {
   startedAt: Date | null;
   finishedAt: Date | null;
   createdAt: Date;
+}
+
+export interface DigestSubscriptionDTO {
+  id: string;
+  ownerUserId: string;
+  email: string;
+  timezone: string;
+  deliverTimeLocal: string;
+  topics: DigestTopicConfigDTO[];
+  enabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

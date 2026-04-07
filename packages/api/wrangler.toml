@@ -1,26 +1,22 @@
-name = "hamhome-api"
+﻿name = "hamhome-api"
 main = "src/index.ts"
 account_id = "f894a8b6810af6c0ce65d763ec8fd960"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 环境变量（非敏感；密钥请用 wrangler secret）
-[vars]
+# 鐜鍙橀噺锛堥潪鏁忔劅锛涘瘑閽ヨ鐢?wrangler secret锛?[vars]
 ENVIRONMENT = "development"
 LLM_API_BASE = "https://api.openai.com/v1"
 LLM_MODEL = "gpt-4o-mini"
-# Resend 发件人：须为控制台已验证域名，或测试用 onboarding@resend.dev（见 Resend 文档）
-RESEND_FROM = "onboarding@resend.dev"
+# Resend 鍙戜欢浜猴細椤讳负鎺у埗鍙板凡楠岃瘉鍩熷悕锛屾垨娴嬭瘯鐢?onboarding@resend.dev锛堣 Resend 鏂囨。锛?RESEND_FROM = "onboarding@resend.dev"
 
-# D1 数据库绑定（本地 dev 用 --local；部署前请 wrangler d1 create 并替换 database_id）
-[[d1_databases]]
+# D1 鏁版嵁搴撶粦瀹氾紙鏈湴 dev 鐢?--local锛涢儴缃插墠璇?wrangler d1 create 骞舵浛鎹?database_id锛?[[d1_databases]]
 binding = "DB"
 database_name = "hamhome-db"
 database_id = "92c2cc80-c984-444d-83fb-353a1318d67a"
 
-# 资讯日报：每小时整点触发一次 cron_tick（结合用户时区与 deliverHourLocal 过滤）
-[triggers]
-crons = ["0 * * * *"]
+# 璧勮鏃ユ姤锛氭瘡灏忔椂鏁寸偣瑙﹀彂涓€娆?cron_tick锛堢粨鍚堢敤鎴锋椂鍖轰笌 deliverHourLocal 杩囨护锛?[triggers]
+crons = ["*/10 * * * *"]
 
 [[queues.producers]]
 binding = "DIGEST_QUEUE"
@@ -31,20 +27,20 @@ queue = "hamhome-digest"
 max_batch_size = 10
 max_batch_timeout = 5
 
-# Vectorize 绑定 (需要创建后配置)
+# Vectorize 缁戝畾 (闇€瑕佸垱寤哄悗閰嶇疆)
 # [[vectorize]]
 # binding = "VECTORIZE"
 # index_name = "hamhome-vec"
 
-# Workers AI 绑定
+# Workers AI 缁戝畾
 # [ai]
 # binding = "AI"
 
-# 开发环境配置
-[env.dev]
+# 寮€鍙戠幆澧冮厤缃?[env.dev]
 vars = { ENVIRONMENT = "development" }
 
-# 生产环境配置
+# 鐢熶骇鐜閰嶇疆
 [env.production]
 vars = { ENVIRONMENT = "production" }
+
 

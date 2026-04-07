@@ -1,5 +1,5 @@
-/**
- * Hono 应用（供 fetch handler 使用）
+﻿/**
+ * Hono 搴旂敤锛堜緵 fetch handler 浣跨敤锛?
  */
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -19,7 +19,7 @@ app.use('*', cors({
     'chrome-extension://*',
     'http://localhost:3000',
   ],
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-User-Id'],
   credentials: true,
 }));
@@ -37,7 +37,7 @@ app.get('/', (c) =>
   c.json({
     name: 'HamHome API',
     version: '1.0.0',
-    message: '🐹 HamHome API is running!',
+    message: '馃惞 HamHome API is running!',
     digest: '/v1/digest/*',
   }),
 );
@@ -69,3 +69,4 @@ app.onError((err, c) => {
 });
 
 export { app };
+
