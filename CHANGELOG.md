@@ -1,29 +1,44 @@
-# 更新日志
+﻿# 更新日志
 
 本仓库为 HamHome / 资讯日报（Digest）相关代码。条目按时间倒序（最新在上）。
 
+## 撰写约定（自 2026-04-09 起）
+
+每条日期下固定分**两部分**（便于阅读与追溯）：
+
+1. **现版本遇到的问题**：上线前用户或运维侧已暴露的问题、缺陷、痛点；若本次仅为日常技术迭代、无已知问题，则写 **暂无**。
+2. **此次更新内容**：本版本实际交付的改动（功能、修复、文档、配置等）。
+
+---
+
 ## 2026-04-09
 
-### Fixed
+### 现版本遇到的问题
 
-- **Scheduled subscription emails skipped**: removed incorrect dedupe in `cron_tick` that compared any recent `digest_runs` `done` row for the owner user against the cron `scheduledTime`, which blocked sends after `run_digest`, tests, or another subscription run.
-- **Default subscription enabled**: digest admin UI now defaults `enabled` to `true` so new subscriptions are eligible for cron unless explicitly turned off.
+- 定时订阅邮件连续多日未发送：`cron_tick` 中对订阅的去重逻辑误用「同一 owner 任意一条近期已完成的 `digest_runs`」与 cron 时间比对，导致在存在 `run_digest`、测试发送或其它订阅成功后，定时订阅被错误跳过。
+- 管理页创建订阅时「定时发送」默认关闭，易产生 `enabled=false`、长期不参与调度的订阅。
+
+### 此次更新内容
+
+- 移除上述错误的 55 分钟去重判断，仅依赖本地时区与 `HH:mm` 的分钟窗口决定是否入队。
+- 管理页新建订阅默认 `enabled: true`（仍可手动关闭）。
+- 已部署 Worker 修复；详见提交 `fix(digest): unblock scheduled subscription emails`。
+
 ## 2026-04-07
 
-### Added
+### 现版本遇到的问题
 
-- **Subscription schema and migrations**: added `digest_subscriptions` with migration files `0003_digest_subscriptions.sql` and `0004_digest_subscription_limits.sql`, including `max_items_per_email` and `max_items_per_topic`.
-- **Admin subscription API**: added list/create/update/delete/test endpoints with bearer auth via `DIGEST_ADMIN_TOKEN` and owner binding via `DIGEST_ADMIN_OWNER_USER_ID`.
-- **Minute-window scheduler utility**: added `schedule.ts` for timezone-based `HH:mm` trigger checks.
-- **One-click release script**: added `packages/api/scripts/release.mjs` to run D1 migrations, Worker deploy, and `/health` checks.
+- 缺少按邮箱的订阅管理与测试发送能力；调度粒度偏粗，难以按本地「时:分」定点投递。
+- 单封邮件与单主题条目缺少可配置上限；`README` 仍指向上游 `ham_home`，与本仓库实际能力不一致。
+- 远程 D1 迁移重复执行时易失败，阻断一键发布流程。
 
-### Changed
+### 此次更新内容
 
-- **Cron frequency**: changed `wrangler.toml` cron to `*/10 * * * *` to support minute-level delivery timing.
-- **Pipeline limits**: enforced per-topic and per-email item caps during digest generation.
-- **Digest admin UI**: redesigned to a two-column layout; topics/keywords now use single CSV inputs; added compact `hourly` switch and delivery-time label switch to `start time` when hourly mode is enabled; bottom actions changed to `Test` and `Create`.
-- **Admin header behavior**: admin operations no longer rely on `X-User-Id` from frontend requests.
-- **Release resilience**: release flow now continues deploy and health-check when migration `0004` is already applied.
+- **数据与迁移**：新增 `digest_subscriptions` 及限额字段迁移 `0003` / `0004`（`max_items_per_email`、`max_items_per_topic`）。
+- **API**：管理员订阅 CRUD + 测试发送；`DIGEST_ADMIN_TOKEN`、`DIGEST_ADMIN_OWNER_USER_ID`；分钟窗口调度工具 `schedule.ts`。
+- **流水线**：按主题与整封邮件双重截断；`wrangler.toml` cron 调整为 `*/10 * * * *`。
+- **前端**：订阅管理页双列布局、逗号分隔主题/关键词、发布脚本 `release.mjs` 与根目录 `api:release`；`0004` 已存在时发布不阻断 deploy + health。
+- **文档**：根目录 `README` 改写为本项目说明。
 
 ## 2026-04-04
 
