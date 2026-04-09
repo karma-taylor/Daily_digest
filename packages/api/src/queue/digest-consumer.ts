@@ -1,7 +1,7 @@
-﻿/**
+/**
  * Cloudflare Queue consumer：run_digest / run_subscription / cron_tick
  */
-import { and, desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import * as schema from '@hamhome/db/schema';
 import { createDb } from '../lib/db';
@@ -65,16 +65,6 @@ async function processCronTick(env: Env, cron: string, scheduledTime: number): P
   for (const sub of subRows) {
     const tz = sub.timezone?.trim() || 'Asia/Shanghai';
     if (!shouldRunSubscriptionAtLocalTime(scheduledTime, tz, sub.deliverTimeLocal, 10)) continue;
-
-    // 防止同一小时重复发送
-    const existing = await db.select().from(schema.digestRuns)
-      .where(and(eq(schema.digestRuns.userId, sub.ownerUserId), eq(schema.digestRuns.status, 'done')))
-      .orderBy(desc(schema.digestRuns.createdAt))
-      .limit(1);
-    if (existing[0]) {
-      const ts = existing[0].createdAt ? new Date(existing[0].createdAt).getTime() : 0;
-      if (Math.abs(ts - scheduledTime) < 55 * 60 * 1000) continue;
-    }
 
     const runId = nanoid();
     await db.insert(schema.digestRuns).values({

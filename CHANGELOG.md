@@ -2,6 +2,12 @@
 
 本仓库为 HamHome / 资讯日报（Digest）相关代码。条目按时间倒序（最新在上）。
 
+## 2026-04-09
+
+### Fixed
+
+- **Scheduled subscription emails skipped**: removed incorrect dedupe in `cron_tick` that compared any recent `digest_runs` `done` row for the owner user against the cron `scheduledTime`, which blocked sends after `run_digest`, tests, or another subscription run.
+- **Default subscription enabled**: digest admin UI now defaults `enabled` to `true` so new subscriptions are eligible for cron unless explicitly turned off.
 ## 2026-04-07
 
 ### Added

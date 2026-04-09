@@ -34,7 +34,7 @@ export default function DigestConsolePage() {
   const [email, setEmail] = useState('');
   const [timezone, setTimezone] = useState('Asia/Shanghai');
   const [deliverTimeLocal, setDeliverTimeLocal] = useState('09:00');
-  const [enabled, setEnabled] = useState(false);
+  const [enabled, setEnabled] = useState(true);
   const [hourlyEnabled, setHourlyEnabled] = useState(false);
   const [topicInput, setTopicInput] = useState('每日 AI 发展, 行业快讯');
   const [keywordInput, setKeywordInput] = useState('ai, llm, openai');
