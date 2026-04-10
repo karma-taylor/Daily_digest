@@ -11,6 +11,23 @@
 
 ---
 
+## 2026-04-10
+
+### Current Issues
+
+- Pages frontend could not call API because `*.pages.dev` origin was missing in API CORS allowlist.
+- `wrangler.toml` blocks (`[vars]`, `[[d1_databases]]`, `[triggers]`) were previously malformed, causing cron and vars recognition issues.
+- Admin UX was noisy: raw JSON status output, redundant list noise, and created-subscription panel not stable after refresh.
+
+### Updates In This Release
+
+- **API/CORS**: allow `*.pages.dev` origin to support Pages-hosted frontend calls.
+- **Config fix**: restore valid `wrangler.toml` sections; redeploy confirms `schedule: */10 * * * *`.
+- **Frontend hosting**: deploy admin UI on Cloudflare Pages with fixed URL `https://hamhome-digest-web.pages.dev/digest`.
+- **UX updates**: split bottom status panel into left(Test) and right(Created Subscription), and keep latest created subscription visible after refresh.
+- **Form updates**: default API Base to production Worker, simplify action labels to `Test` / `Create`, and hide redundant subscription list block.
+- **Send mode enhancement**: compact send-mode container and add per-topic news input limit with max `10`, passed as `maxItemsPerTopic` in create request.
+
 ## 2026-04-09
 
 ### 现版本遇到的问题
