@@ -4,18 +4,18 @@ account_id = "f894a8b6810af6c0ce65d763ec8fd960"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 鐜鍙橀噺锛堥潪鏁忔劅锛涘瘑閽ヨ鐢?wrangler secret锛?[vars]
+[vars]
 ENVIRONMENT = "development"
 LLM_API_BASE = "https://api.openai.com/v1"
 LLM_MODEL = "gpt-4o-mini"
-# Resend 鍙戜欢浜猴細椤讳负鎺у埗鍙板凡楠岃瘉鍩熷悕锛屾垨娴嬭瘯鐢?onboarding@resend.dev锛堣 Resend 鏂囨。锛?RESEND_FROM = "onboarding@resend.dev"
+RESEND_FROM = "onboarding@resend.dev"
 
-# D1 鏁版嵁搴撶粦瀹氾紙鏈湴 dev 鐢?--local锛涢儴缃插墠璇?wrangler d1 create 骞舵浛鎹?database_id锛?[[d1_databases]]
+[[d1_databases]]
 binding = "DB"
 database_name = "hamhome-db"
 database_id = "92c2cc80-c984-444d-83fb-353a1318d67a"
 
-# 璧勮鏃ユ姤锛氭瘡灏忔椂鏁寸偣瑙﹀彂涓€娆?cron_tick锛堢粨鍚堢敤鎴锋椂鍖轰笌 deliverHourLocal 杩囨护锛?[triggers]
+[triggers]
 crons = ["*/10 * * * *"]
 
 [[queues.producers]]
@@ -27,20 +27,8 @@ queue = "hamhome-digest"
 max_batch_size = 10
 max_batch_timeout = 5
 
-# Vectorize 缁戝畾 (闇€瑕佸垱寤哄悗閰嶇疆)
-# [[vectorize]]
-# binding = "VECTORIZE"
-# index_name = "hamhome-vec"
-
-# Workers AI 缁戝畾
-# [ai]
-# binding = "AI"
-
-# 寮€鍙戠幆澧冮厤缃?[env.dev]
+[env.dev]
 vars = { ENVIRONMENT = "development" }
 
-# 鐢熶骇鐜閰嶇疆
 [env.production]
 vars = { ENVIRONMENT = "production" }
-
-
