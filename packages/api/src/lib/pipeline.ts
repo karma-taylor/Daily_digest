@@ -15,16 +15,14 @@ import type { LlmDigestResult } from './llm';
 import { renderDigestEmailHtml } from './render-digest-html';
 import { sendHtmlEmail } from './email';
 import { publishDigestMqtt } from './mqtt';
-import type { TopicBucketConfig } from './topic-buckets';
+import type { TopicBucketConfig, AggItem } from './topic-buckets';
 import { partitionItemsIntoTopicBuckets } from './topic-buckets';
-
-type Agg = { title: string; url: string; summary: string };
-
+import { filterToLocalCalendarDay, parseRssPublished } from './digest-recency';
 
 function limitBucketsByTotalItems(
-  buckets: { category: string; items: Agg[] }[],
+  buckets: { category: string; items: AggItem[] }[],
   totalCap: number,
-): { category: string; items: Agg[] }[] {
+): { category: string; items: AggItem[] }[] {
   let remain = Math.max(1, totalCap);
   return buckets.map((b) => {
     if (remain <= 0) return { category: b.category, items: [] };
@@ -95,7 +93,7 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
     const topicConfigs = parseTopicsFromSettings(settings?.topicsJson);
     const useTopics = topicConfigs.length > 0;
 
-    const agg: Agg[] = [];
+    const agg: AggItem[] = [];
     const sourceErrors: string[] = [];
 
     const rssCap = useTopics ? 70 : 25;
@@ -105,11 +103,22 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
         if (src.kind === 'rss') {
           const items = await fetchAndParseFeed(src.url);
           for (const it of items.slice(0, rssCap)) {
-            agg.push({ title: it.title, url: it.url, summary: it.summary || '' });
+            const publishedAt = parseRssPublished(it.published);
+            agg.push({
+              title: it.title,
+              url: it.url,
+              summary: it.summary || '',
+              ...(publishedAt ? { publishedAt } : {}),
+            });
           }
         } else {
           const page = await fetchPagePlain(src.url);
-          agg.push({ title: page.title, url: src.url, summary: page.text.slice(0, 6000) });
+          agg.push({
+            title: page.title,
+            url: src.url,
+            summary: page.text.slice(0, 6000),
+            skipDateFilter: true,
+          });
         }
       } catch (e) {
         sourceErrors.push(`${src.url}: ${e instanceof Error ? e.message : String(e)}`);
@@ -117,6 +126,12 @@ export async function runDigestPipeline(env: Env, runId: string, userId: string)
     }
 
     let deduped = dedupeByUrlAndTitle(agg);
+    const digestTz = settings?.timezone?.trim() || 'Asia/Shanghai';
+    const beforeRecency = deduped.length;
+    deduped = filterToLocalCalendarDay(deduped, digestTz);
+    if (beforeRecency > 0 && deduped.length < beforeRecency) {
+      console.warn('[pipeline] recency filter', { userId, tz: digestTz, before: beforeRecency, after: deduped.length });
+    }
     if (!useTopics && keywords.length > 0) {
       const kw = keywords.map((k) => k.toLowerCase());
       deduped = deduped.filter((it) => {
@@ -298,7 +313,7 @@ export async function runDigestPipelineForSubscription(
       and(eq(schema.digestSources.userId, ownerUserId), eq(schema.digestSources.enabled, true)),
     );
 
-    const agg: Agg[] = [];
+    const agg: AggItem[] = [];
     const sourceErrors: string[] = [];
     const rssCap = mode === 'test' ? 25 : 70;
 
@@ -307,18 +322,40 @@ export async function runDigestPipelineForSubscription(
         if (src.kind === 'rss') {
           const items = await fetchAndParseFeed(src.url);
           for (const it of items.slice(0, rssCap)) {
-            agg.push({ title: it.title, url: it.url, summary: it.summary || '' });
+            const publishedAt = parseRssPublished(it.published);
+            agg.push({
+              title: it.title,
+              url: it.url,
+              summary: it.summary || '',
+              ...(publishedAt ? { publishedAt } : {}),
+            });
           }
         } else {
           const page = await fetchPagePlain(src.url);
-          agg.push({ title: page.title, url: src.url, summary: page.text.slice(0, 6000) });
+          agg.push({
+            title: page.title,
+            url: src.url,
+            summary: page.text.slice(0, 6000),
+            skipDateFilter: true,
+          });
         }
       } catch (e) {
         sourceErrors.push(`${src.url}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
-    const deduped = dedupeByUrlAndTitle(agg);
+    let deduped = dedupeByUrlAndTitle(agg);
+    const subTz = sub.timezone?.trim() || 'Asia/Shanghai';
+    const beforeRecencySub = deduped.length;
+    deduped = filterToLocalCalendarDay(deduped, subTz);
+    if (beforeRecencySub > 0 && deduped.length < beforeRecencySub) {
+      console.warn('[pipeline] recency filter (subscription)', {
+        subscriptionId,
+        tz: subTz,
+        before: beforeRecencySub,
+        after: deduped.length,
+      });
+    }
     const perTopicCap = Math.max(1, Math.min(40, sub.maxItemsPerTopic ?? 10));
     const totalCap = Math.max(1, Math.min(200, sub.maxItemsPerEmail ?? 20));
     const bucketsRaw = partitionItemsIntoTopicBuckets(deduped, topicConfigs.map((t) => ({

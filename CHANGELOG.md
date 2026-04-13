@@ -11,6 +11,22 @@
 
 ---
 
+## 2026-04-13
+
+### Current Issues
+
+- Scheduled and test digest emails could list headlines that were already several days old, because the pipeline took the first N RSS items without comparing `pubDate` to the subscriber's local calendar day.
+- LLM system prompts did not explicitly say summaries must treat the corpus as same-day news only.
+
+### Updates In This Release
+
+- **RSS recency**: new `digest-recency.ts`; after dedupe, keep RSS rows whose parsed publish time falls on **today** in the digest timezone (`digest_user_settings.timezone` or `digest_subscriptions.timezone`); invalid timezone falls back to `UTC`.
+- **Plain URL sources**: still ingested with `skipDateFilter` so full-page snapshots are not dropped when no reliable article timestamp exists.
+- **Data model**: `AggItem` carries optional `publishedAt` / `skipDateFilter`; RSS loop sets `publishedAt` when `pubDate` parses; undated RSS rows are excluded from the same-day set.
+- **LLM**: topic and non-topic system prompts add a line that input is same-calendar-day only and stale-dated items must not be framed as today's lead news.
+- **Digest admin UI**: restore valid `'use client'` directive; default API base to production Worker URL; clearer test vs created-subscription status, `maxItemsPerTopic` wired into topic drafts, auto-load subscriptions when admin token is present.
+- **CORS**: `origin` resolved via a matcher (hamhome.app, localhost, `chrome-extension://*`, `*.pages.dev`).
+
 ## 2026-04-10
 
 ### Current Issues

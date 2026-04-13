@@ -58,6 +58,7 @@ export async function generateTopicDigestWithLlm(env: Env, topicBlocks: { catego
     MAX_TOPIC_BULLETS +
     " 条\n" +
     "- 每条 bullet 用中文 1–2 句客观摘要，不编造事实\n" +
+    "- 输入已限制为「订阅时区当地日历日=当日」的稿件；不得把明显早于当日的旧闻当今日要闻写\n" +
     "- 不要 markdown，不要代码块包裹 JSON";
 
   const user = topicBlocks
@@ -141,7 +142,7 @@ export async function generateDigestWithLlm(env: Env, userBlob: string): Promise
   ],
   "chart": null 或 { "title": "图表标题", "headers": ["列A","列B"], "rows": [["1","2"],["3","4"]] }（仅当输入中有可表格化的数值对比时）
 }
-要求：去重相近信息；客观中性；sections 至少 1 条、最多 6 条；不要 markdown，不要代码块包裹 JSON。`;
+要求：去重相近信息；客观中性；输入已按用户时区过滤为「当地当日」发布的条目，不得把早于当日的旧闻当今日要点；sections 至少 1 条、最多 6 条；不要 markdown，不要代码块包裹 JSON。`;
 
   const res = await fetch(`${base}/chat/completions`, {
     method: 'POST',

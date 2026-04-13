@@ -9,7 +9,15 @@ export type TopicBucketConfig = {
   maxItems?: number;
 };
 
-export type AggItem = { title: string; url: string; summary: string };
+export type AggItem = {
+  title: string;
+  url: string;
+  summary: string;
+  /** RSS pubDate / Atom updated，用于「仅当地当日」过滤 */
+  publishedAt?: Date;
+  /** 整页 URL 源无可靠发布日，不参与日历日过滤 */
+  skipDateFilter?: boolean;
+};
 
 /** 可直接用于 PUT /v1/digest/settings 的 topics：伊朗局势 + AI */
 export const DEFAULT_IRAN_AI_TOPICS: TopicBucketConfig[] = [

@@ -14,11 +14,14 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', logger());
 app.use('*', prettyJSON());
 app.use('*', cors({
-  origin: [
-    'https://hamhome.app',
-    'chrome-extension://*',
-    'http://localhost:3000',
-  ],
+  origin: (origin) => {
+    if (!origin) return origin;
+    if (origin === 'https://hamhome.app') return origin;
+    if (origin === 'http://localhost:3000') return origin;
+    if (origin.startsWith('chrome-extension://')) return origin;
+    if (origin.endsWith('.pages.dev')) return origin;
+    return '';
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-User-Id'],
   credentials: true,
