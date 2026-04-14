@@ -64,6 +64,7 @@ async function processCronTick(env: Env, cron: string, scheduledTime: number): P
 
   for (const sub of subRows) {
     const tz = sub.timezone?.trim() || 'Asia/Shanghai';
+    // 与 `*/10` UTC cron 对齐：在 scheduledTime 对应的 10 分钟片内扫描本地分钟，避免「投递分钟从未落在触发瞬间」导致永远不跑
     if (!shouldRunSubscriptionAtLocalTime(scheduledTime, tz, sub.deliverTimeLocal, 10)) continue;
 
     const runId = nanoid();
