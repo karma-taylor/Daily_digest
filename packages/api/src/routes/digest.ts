@@ -53,8 +53,10 @@ digest.get('/sources', async (c) => {
   return c.json({ success: true, data: rows });
 });
 
+const sourceKindSchema = z.enum(['rss', 'url', 'youtube_channel', 'x_profile']);
+
 const createSourceSchema = z.object({
-  kind: z.enum(['rss', 'url']),
+  kind: sourceKindSchema,
   url: z.string().url(),
   title: z.string().optional(),
 });
@@ -117,6 +119,15 @@ const topicConfigSchema = z.object({
   label: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(1),
   maxItems: z.number().min(1).max(40).optional(),
+  watchlist: z.array(z.object({
+    name: z.string().min(1),
+    entityType: z.enum(['person', 'organization']),
+    aliases: z.array(z.string()).optional().default([]),
+    sources: z.array(z.object({
+      kind: sourceKindSchema,
+      url: z.string().url(),
+    })).min(1),
+  })).optional(),
 });
 
 const deliverTimeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -149,17 +160,47 @@ function isValidTimeZone(tz: string): boolean {
   }
 }
 
-function parseTopicsJson(raw: string | null | undefined): { label: string; keywords: string[]; maxItems?: number }[] {
+function parseTopicsJson(raw: string | null | undefined): {
+  label: string;
+  keywords: string[];
+  maxItems?: number;
+  watchlist?: {
+    name: string;
+    entityType: 'person' | 'organization';
+    aliases: string[];
+    sources: { kind: 'rss' | 'url' | 'youtube_channel' | 'x_profile'; url: string }[];
+  }[];
+}[] {
   if (!raw) return [];
   try {
     const arr = JSON.parse(raw) as unknown;
     if (!Array.isArray(arr)) return [];
     return arr.map((x) => {
       const o = x as Record<string, unknown>;
+      const watchlist = Array.isArray(o.watchlist)
+        ? o.watchlist.map((w) => {
+          const wo = w as Record<string, unknown>;
+          return {
+            name: String(wo.name ?? ''),
+            entityType: wo.entityType === 'organization' ? 'organization' as const : 'person' as const,
+            aliases: Array.isArray(wo.aliases) ? wo.aliases.map((a) => String(a)) : [],
+            sources: Array.isArray(wo.sources)
+              ? wo.sources.map((s) => {
+                const so = s as Record<string, unknown>;
+                return {
+                  kind: String(so.kind ?? 'url') as 'rss' | 'url' | 'youtube_channel' | 'x_profile',
+                  url: String(so.url ?? ''),
+                };
+              }).filter((s) => s.url.length > 0)
+              : [],
+          };
+        }).filter((w) => w.name.length > 0 && w.sources.length > 0)
+        : undefined;
       return {
         label: String(o.label ?? ''),
         keywords: Array.isArray(o.keywords) ? o.keywords.map((k) => String(k)) : [],
         maxItems: typeof o.maxItems === 'number' ? o.maxItems : undefined,
+        ...(watchlist ? { watchlist } : {}),
       };
     }).filter((x) => x.label && x.keywords.length > 0);
   } catch {
@@ -179,6 +220,15 @@ const settingsSchema = z.object({
         label: z.string().min(1),
         keywords: z.array(z.string()).min(1),
         maxItems: z.number().min(1).max(40).optional(),
+        watchlist: z.array(z.object({
+          name: z.string().min(1),
+          entityType: z.enum(['person', 'organization']),
+          aliases: z.array(z.string()).optional().default([]),
+          sources: z.array(z.object({
+            kind: sourceKindSchema,
+            url: z.string().url(),
+          })).min(1),
+        })).optional(),
       }),
     )
     .optional(),
@@ -208,27 +258,7 @@ digest.get('/settings', async (c) => {
       keywords = [];
     }
   }
-  let topics: { label: string; keywords: string[]; maxItems?: number }[] = [];
-  if (row.topicsJson) {
-    try {
-      const t = JSON.parse(row.topicsJson) as unknown;
-      if (Array.isArray(t)) {
-        topics = t
-          .filter(Boolean)
-          .map((x) => {
-            const o = x as Record<string, unknown>;
-            return {
-              label: String(o.label ?? ""),
-              keywords: Array.isArray(o.keywords) ? o.keywords.map((k) => String(k)) : [],
-              maxItems: typeof o.maxItems === "number" ? o.maxItems : undefined,
-            };
-          })
-          .filter((x) => x.label.length > 0 && x.keywords.length > 0);
-      }
-    } catch {
-      topics = [];
-    }
-  }
+  const topics = parseTopicsJson(row.topicsJson);
   return c.json({
     success: true,
     data: {
@@ -296,27 +326,7 @@ digest.put('/settings', zValidator('json', settingsSchema), async (c) => {
       keywords = [];
     }
   }
-  let topics: { label: string; keywords: string[]; maxItems?: number }[] = [];
-  if (row?.topicsJson) {
-    try {
-      const t = JSON.parse(row.topicsJson) as unknown;
-      if (Array.isArray(t)) {
-        topics = t
-          .filter(Boolean)
-          .map((x) => {
-            const o = x as Record<string, unknown>;
-            return {
-              label: String(o.label ?? ""),
-              keywords: Array.isArray(o.keywords) ? o.keywords.map((k) => String(k)) : [],
-              maxItems: typeof o.maxItems === "number" ? o.maxItems : undefined,
-            };
-          })
-          .filter((x) => x.label.length > 0 && x.keywords.length > 0);
-      }
-    } catch {
-      topics = [];
-    }
-  }
+  const topics = parseTopicsJson(row?.topicsJson);
   return c.json({
     success: true,
     data: row
@@ -558,8 +568,6 @@ digest.post('/subscriptions/:id/test', async (c) => {  const admin = requireAdmi
   }, syncDev ? 200 : 202);
 });
 export { digest };
-
-
 
 
 

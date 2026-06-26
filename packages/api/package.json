@@ -23,6 +23,7 @@
     "zod": "^3.22.0",
     "nanoid": "^5.0.0",
     "drizzle-orm": "^0.30.0",
+    "unpdf": "^1.6.2",
     "@hamhome/db": "workspace:*",
     "@hamhome/types": "workspace:*"
   },

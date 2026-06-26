@@ -2,7 +2,7 @@
  * 璧勮鏃ユ姤锛堜簯绔墿灞曪級鈥?涓?packages/db 涓?digest_* 琛ㄥ搴?
  */
 
-export type DigestSourceKind = 'rss' | 'url';
+export type DigestSourceKind = 'rss' | 'url' | 'youtube_channel' | 'x_profile';
 
 export type DigestRunStatus = 'pending' | 'running' | 'done' | 'failed';
 
@@ -21,6 +21,19 @@ export interface DigestTopicConfigDTO {
   label: string;
   keywords: string[];
   maxItems?: number;
+  watchlist?: DigestWatchTargetDTO[];
+}
+
+export interface DigestWatchTargetSourceDTO {
+  kind: DigestSourceKind;
+  url: string;
+}
+
+export interface DigestWatchTargetDTO {
+  name: string;
+  entityType: 'person' | 'organization';
+  aliases: string[];
+  sources: DigestWatchTargetSourceDTO[];
 }
 
 export interface DigestUserSettingsDTO {

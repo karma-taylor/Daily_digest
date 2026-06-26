@@ -14,6 +14,8 @@ export interface Env {
   /** wrangler secret put LLM_API_KEY */
   LLM_API_KEY?: string;
   LLM_MODEL?: string;
+  /** Optional RSSHub base URL for x_profile sources, e.g. https://rsshub.example.com */
+  RSSHUB_BASE_URL?: string;
 
   /** Resend：secret put RESEND_API_KEY；RESEND_FROM 放在 wrangler [vars] */
   RESEND_API_KEY?: string;

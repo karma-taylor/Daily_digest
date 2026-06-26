@@ -7,6 +7,12 @@ export type TopicBucketConfig = {
   label: string;
   keywords: string[];
   maxItems?: number;
+  watchlist?: {
+    name: string;
+    entityType: 'person' | 'organization';
+    aliases: string[];
+    sources: { kind: 'rss' | 'url' | 'youtube_channel' | 'x_profile'; url: string }[];
+  }[];
 };
 
 export type AggItem = {

@@ -3,7 +3,17 @@
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 
-type Topic = { label: string; keywords: string[]; maxItems?: number };
+type Topic = {
+  label: string;
+  keywords: string[];
+  maxItems?: number;
+  watchlist?: {
+    name: string;
+    entityType: 'person' | 'organization';
+    aliases: string[];
+    sources: { kind: 'rss' | 'url' | 'youtube_channel' | 'x_profile'; url: string }[];
+  }[];
+};
 type Subscription = {
   id: string;
   email: string;
@@ -36,6 +46,7 @@ export default function DigestConsolePage() {
   const [maxItemsPerTopic, setMaxItemsPerTopic] = useState(10);
   const [topicInput, setTopicInput] = useState('每日 AI 发展, 行业快讯');
   const [keywordInput, setKeywordInput] = useState('ai, llm, openai');
+  const [watchlistInput, setWatchlistInput] = useState('[{"name":"Google DeepMind","entityType":"organization","aliases":["Gemini","DeepMind"],"sources":[{"kind":"youtube_channel","url":"https://www.youtube.com/feeds/videos.xml?channel_id=UCbfYPyITQ-7l4upoX8nvctg"}]}]');
 
   useEffect(() => {
     const saved = window.localStorage.getItem('digest_admin_token') ?? '';
@@ -50,9 +61,16 @@ export default function DigestConsolePage() {
   const topicDraft = useMemo(() => {
     const labels = splitCsv(topicInput, MAX_TOPICS);
     const keywords = splitCsv(keywordInput, MAX_KEYWORDS);
+    let watchlist: Topic['watchlist'] = [];
+    try {
+      const parsed = JSON.parse(watchlistInput || '[]') as unknown;
+      watchlist = Array.isArray(parsed) ? parsed as Topic['watchlist'] : [];
+    } catch {
+      watchlist = [];
+    }
     if (labels.length === 0 || keywords.length === 0) return [];
-    return labels.map((label) => ({ label, keywords, maxItems: maxItemsPerTopic }));
-  }, [topicInput, keywordInput, maxItemsPerTopic]);
+    return labels.map((label) => ({ label, keywords, maxItems: maxItemsPerTopic, ...(watchlist?.length ? { watchlist } : {}) }));
+  }, [topicInput, keywordInput, maxItemsPerTopic, watchlistInput]);
 
   async function call(path: string, init?: RequestInit) {
     try {
@@ -247,6 +265,16 @@ export default function DigestConsolePage() {
               <label className="text-sm text-zinc-300">关键词</label>
               <div className="text-xs text-zinc-500">最多五个关键词，逗号分隔</div>
               <input className="w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" value={keywordInput} onChange={(e) => setKeywordInput(e.target.value)} placeholder="ai, llm, openai" />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-sm text-zinc-300">关注人物/机构 JSON</label>
+              <div className="text-xs text-zinc-500">会附加到每个主题；支持 x_profile / youtube_channel / rss / url。</div>
+              <textarea
+                className="h-28 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs"
+                value={watchlistInput}
+                onChange={(e) => setWatchlistInput(e.target.value)}
+                placeholder='[{"name":"Gemini CEO","entityType":"person","aliases":["..."],"sources":[{"kind":"x_profile","url":"https://x.com/..."}]}]'
+              />
             </div>
           </div>
 
